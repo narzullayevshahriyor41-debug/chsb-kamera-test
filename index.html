@@ -43,7 +43,7 @@ button.secondary{background:#e8eef8;color:#19355d}button:disabled{opacity:.4;cur
 <div class="small">Ovoz darajasi: <b id="micLevel">0%</b></div>
 <label class="small" for="micSensitivity">Sezgirlik: <b id="sensitivityLabel">Yuqori</b></label>
 <input id="micSensitivity" type="range" min="1" max="10" value="2" style="width:100%">
-<p class="small">Mikrofon faqat ovoz balandligini tekshiradi. Gapni yozib olmaydi va kim gapirayotganini aniqlamaydi. Shovqin ham ogohlantirish berishi mumkin.</p>
+<p class="small">Ovoz darajasi 5% dan oshib 1 soniyadan ortiq davom etsa, test 5 soniyaga bloklanadi. Mikrofon faqat ovoz balandligini tekshiradi; gap mazmunini aniqlamaydi. Shovqin ham bloklashga sabab bo‘lishi mumkin.</p>
 </div>
 <div class="warning-count">
 <div>👤 Yuz holati: <b id="faceStatus">Tekshirilmagan</b></div>
@@ -110,12 +110,13 @@ async function startMicrophone(){
       let sum=0;
       for(let i=0;i<samples.length;i++){const x=(samples[i]-128)/128;sum+=x*x;}
       const rms=Math.sqrt(sum/samples.length);
-      const threshold=Number(sensitivity.value)/100;
-      $('micMeter').style.width=Math.min(100,Math.round(rms*500))+'%';$('micLevel').textContent=Math.min(100,Math.round(rms*500))+'%';
-      if(rms>threshold){
-        $('micStatus').textContent='Ovoz aniqlandi — '+Math.round(rms*100)+'%';
+      const level=Math.min(100,Math.round(rms*500));
+      const thresholdPercent=5;
+      $('micMeter').style.width=level+'%';$('micLevel').textContent=level+'%';
+      if(level>thresholdPercent){
+        $('micStatus').textContent='Ovoz aniqlandi — '+level+'% (chegara: 5%)';
         if(!micLoudSince)micLoudSince=Date.now();
-        if(Date.now()-micLoudSince>1400&&!locked&&Date.now()-lastBlock>6500){
+        if(Date.now()-micLoudSince>1000&&!locked&&Date.now()-lastBlock>6500){
           warnings++;$('warnCount').textContent=warnings;
           lastBlock=Date.now();blockForFiveSeconds();
           $('micStatus').textContent='Ovoz balandligi sabab ogohlantirish berildi';
