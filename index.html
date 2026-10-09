@@ -33,6 +33,18 @@ button.secondary{background:#e8eef8;color:#19355d}button:disabled{opacity:.4;cur
 <button id="startCam" style="width:100%;margin-top:10px">Kamerani yoqish</button>
 <div id="camStatus" class="status">Kamera hali yoqilmagan</div>
 <p class="small">Kamera faqat ushbu sahifada ishlaydi. Ruxsat berishingiz kerak. Yuz yo‘nalishi taxminiy aniqlanadi; ko‘z harakatini yoki aldashni aniq tasdiqlamaydi.</p>
+<div style="margin-top:14px;border-top:1px solid #dbe4f0;padding-top:12px">
+<h3>🎙️ Ovoz nazorati</h3>
+<button id="startMic" class="secondary" style="width:100%">Mikrofonni yoqish</button>
+<div id="micStatus" class="small" style="margin-top:8px">Mikrofon hali yoqilmagan</div>
+<div style="height:8px;background:#e1e8f2;border-radius:8px;overflow:hidden;margin-top:8px">
+<div id="micMeter" style="height:100%;width:0%;background:#16a34a;transition:width .1s"></div>
+</div>
+<div class="small">Ovoz darajasi: <b id="micLevel">0%</b></div>
+<label class="small" for="micSensitivity">Sezgirlik: <b id="sensitivityLabel">Yuqori</b></label>
+<input id="micSensitivity" type="range" min="1" max="10" value="2" style="width:100%">
+<p class="small">Mikrofon faqat ovoz balandligini tekshiradi. Gapni yozib olmaydi va kim gapirayotganini aniqlamaydi. Shovqin ham ogohlantirish berishi mumkin.</p>
+</div>
 <div class="warning-count">
 <div>👤 Yuz holati: <b id="faceStatus">Tekshirilmagan</b></div>
 <div>⚠️ Ogohlantirishlar: <b id="warnCount">0</b></div>
@@ -74,6 +86,53 @@ q[1].forEach((v,i)=>{let lab=document.createElement('label');lab.className='opti
 $('prev').disabled=idx===0;$('next').style.display=idx===qs.length-1?'none':'inline-block';$('finish').style.display=idx===qs.length-1?'inline-block':'none'}
 $('prev').onclick=()=>{if(idx>0){idx--;render()}};$('next').onclick=()=>{if(idx<qs.length-1){idx++;render()}};$('finish').onclick=()=>{if(locked)return;let score=qs.reduce((s,q,i)=>s+(answers[i]===q[2]?1:0),0);$('quizArea').hidden=true;$('result').hidden=false;$('result').innerHTML=`<h2>Natija: ${score} / 10 (${score*10}%)</h2>`+qs.map((q,i)=>`<p>${i+1}. ${q[0]}<br>Sizning javobingiz: <b>${answers[i]===undefined?'Belgilanmagan':q[1][answers[i]]}</b><br>To‘g‘ri javob: <b style="color:#16834a">${q[1][q[2]]}</b></p>`).join('')+`<button onclick="location.reload()">Qaytadan ishlash</button>`};
 render();
+
+let micStream=null,audioContext=null,analyser=null,micTimer=null,micLoudSince=null;
+const sensitivity=$('micSensitivity');
+sensitivity.addEventListener('input',()=>{
+  const v=Number(sensitivity.value);
+  $('sensitivityLabel').textContent=v<=3?'Yuqori':v<=6?'O‘rtacha':'Past';
+});
+async function startMicrophone(){
+  try{
+    if(!navigator.mediaDevices?.getUserMedia) throw new Error('Mikrofon uchun HTTPS yoki localhost kerak.');
+    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:false},video:false});
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) throw new Error('Brauzer audio tahlilini qo‘llamaydi.');
+    audioContext=new AC();
+    const source=audioContext.createMediaStreamSource(micStream);
+    analyser=audioContext.createAnalyser();analyser.fftSize=1024;source.connect(analyser);
+    const samples=new Uint8Array(analyser.fftSize);
+    $('micStatus').textContent='Mikrofon ishlayapti — ovoz darajasi kuzatilmoqda';
+    $('startMic').disabled=true;
+    micTimer=setInterval(()=>{
+      analyser.getByteTimeDomainData(samples);
+      let sum=0;
+      for(let i=0;i<samples.length;i++){const x=(samples[i]-128)/128;sum+=x*x;}
+      const rms=Math.sqrt(sum/samples.length);
+      const threshold=Number(sensitivity.value)/100;
+      $('micMeter').style.width=Math.min(100,Math.round(rms*500))+'%';$('micLevel').textContent=Math.min(100,Math.round(rms*500))+'%';
+      if(rms>threshold){
+        $('micStatus').textContent='Ovoz aniqlandi — '+Math.round(rms*100)+'%';
+        if(!micLoudSince)micLoudSince=Date.now();
+        if(Date.now()-micLoudSince>1400&&!locked&&Date.now()-lastBlock>6500){
+          warnings++;$('warnCount').textContent=warnings;
+          lastBlock=Date.now();blockForFiveSeconds();
+          $('micStatus').textContent='Ovoz balandligi sabab ogohlantirish berildi';
+          micLoudSince=null;
+        }
+      }else{
+        micLoudSince=null;
+        $('micStatus').textContent='Mikrofon ishlayapti — baland ovoz aniqlanmadi';
+      }
+    },120);
+  }catch(e){
+    $('micStatus').textContent='Xatolik: '+e.message;
+    alert('Mikrofon ishga tushmadi: '+e.message+'\nBrauzer ruxsatini tekshiring.');
+  }
+}
+$('startMic').addEventListener('click',startMicrophone);
+
 function blockForFiveSeconds(){if(locked)return;locked=true;blocks++;$('blockCount').textContent=blocks;$('overlay').style.display='flex';let n=5;$('count').textContent=n;let t=setInterval(()=>{n--; $('count').textContent=n;if(n<=0){clearInterval(t);$('overlay').style.display='none';locked=false;lookingAwaySince=null}},1000)}
 $('startCam').onclick=async()=>{try{
 if(!navigator.mediaDevices?.getUserMedia)throw new Error('Kamera uchun localhost yoki HTTPS kerak.');
