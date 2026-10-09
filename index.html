@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Informatika testi — kamera nazorati</title>
+<style>
+:root{--navy:#10284a;--blue:#1877f2;--bg:#eef3fa;--green:#16a34a;--red:#dc2850}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#14233d}
+header{background:var(--navy);color:white;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+main{display:grid;grid-template-columns:310px minmax(300px,1fr);gap:18px;padding:18px;max-width:1400px;margin:auto}
+.panel,.quiz{background:white;border-radius:16px;padding:18px;box-shadow:0 4px 18px #18365b12}
+video{width:100%;border-radius:10px;background:#101827;transform:scaleX(-1);min-height:170px;object-fit:cover}
+.status{padding:11px;border-radius:10px;background:#e8f8ee;color:#116b35;margin-top:10px;font-weight:bold}
+.small{font-size:13px;color:#64748b;line-height:1.5}.warning-count{margin-top:12px;padding:12px;background:#f2f6fb;border-radius:10px;line-height:1.8}
+button{border:0;border-radius:10px;background:var(--blue);color:white;padding:12px 16px;font-weight:bold;cursor:pointer}
+button.secondary{background:#e8eef8;color:#19355d}button:disabled{opacity:.4;cursor:not-allowed}
+.topline{display:flex;justify-content:space-between;gap:12px;align-items:center}.bar{height:8px;background:#e1e8f2;border-radius:8px;overflow:hidden;margin:12px 0 24px}.bar span{display:block;height:100%;background:var(--blue);width:0}
+.option{display:block;padding:14px;border:1px solid #d6e0ef;border-radius:10px;margin:10px 0;cursor:pointer}.option:hover{background:#f2f7ff}.option input{margin-right:10px}
+.actions{display:flex;gap:10px;justify-content:space-between;margin-top:20px;flex-wrap:wrap}
+#overlay{display:none;position:fixed;inset:0;background:#07172dc9;z-index:5;align-items:center;justify-content:center;padding:20px}
+.alert{background:var(--red);color:white;border-radius:18px;padding:34px;max-width:650px;width:100%;text-align:center;box-shadow:0 20px 60px #0005}
+#count{font-size:56px;font-weight:bold;border:5px solid #ffffff80;border-radius:50%;width:105px;height:105px;display:grid;place-items:center;margin:20px auto}
+#result{margin-top:18px;line-height:1.8}.pill{font-size:12px;background:#e7f1ff;color:#1555a4;padding:5px 8px;border-radius:20px}
+@media(max-width:760px){main{grid-template-columns:1fr;padding:10px}header{padding:13px}.panel{order:2}}
+</style>
+</head>
+<body>
+<header><strong>▣ Informatika testi</strong><span id="clock">Kamera nazorati bilan sinov</span><span>10 ta savol</span></header>
+<main>
+<aside class="panel">
+<h3>📷 Kamera nazorati</h3>
+<video id="video" autoplay muted playsinline></video>
+<button id="startCam" style="width:100%;margin-top:10px">Kamerani yoqish</button>
+<div id="camStatus" class="status">Kamera hali yoqilmagan</div>
+<p class="small">Kamera faqat ushbu sahifada ishlaydi. Ruxsat berishingiz kerak. Yuz yo‘nalishi taxminiy aniqlanadi; ko‘z harakatini yoki aldashni aniq tasdiqlamaydi.</p>
+<div class="warning-count">
+<div>👤 Yuz holati: <b id="faceStatus">Tekshirilmagan</b></div>
+<div>⚠️ Ogohlantirishlar: <b id="warnCount">0</b></div>
+<div>🔒 Bloklashlar: <b id="blockCount">0</b></div>
+</div>
+<p class="small">Eslatma: test ekrani sahifa ichida 5 soniya yopiladi. Bu Windows kompyuterini to‘liq qulflamaydi.</p>
+</aside>
+<section class="quiz">
+<div id="quizArea">
+<div class="topline"><span id="qnum">Savol 1 / 10</span><span class="pill">Sinov rejimi</span></div>
+<div class="bar"><span id="progress"></span></div>
+<h2 id="question"></h2>
+<div id="options"></div>
+<div class="actions"><button id="prev" class="secondary">Oldingi</button><button id="next">Keyingi</button><button id="finish" style="display:none;background:#16834a">Testni yakunlash</button></div>
+</div>
+<div id="result" hidden></div>
+</section>
+</main>
+<div id="overlay"><div class="alert"><div style="font-size:44px">⚠</div><h1>Boshqa tomonga qaradingiz!</h1><p>Ekran 5 soniyaga bloklandi.</p><div id="count">5</div><p>Iltimos, ekranga qarang.</p></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script>
+const qs=[
+["Kompyuterning asosiy hisoblash qurilmasi qaysi?",["Monitor","Protsessor (CPU)","Klaviatura","Printer"],1],
+["Ma’lumotlarni vaqtincha saqlaydigan xotira qaysi?",["RAM","SSD","DVD","Flash-disk"],0],
+["Windows qanday dastur?",["Operatsion tizim","Matn muharriri","Antivirus","Brauzer"],0],
+["Internet sahifalarini ochish uchun qaysi dastur ishlatiladi?",["Paint","Calculator","Google Chrome","Notepad"],2],
+["1 bayt necha bitdan iborat?",["2 bit","4 bit","8 bit","16 bit"],2],
+["Matnni nusxalash klaviatura kombinatsiyasi qaysi?",["Ctrl + V","Ctrl + C","Ctrl + X","Ctrl + Z"],1],
+["Excel dasturida formula qaysi belgi bilan boshlanadi?",["#","=","&","@"],1],
+["Kompyuter tarmog‘ining vazifasi nima?",["Faqat rasm chizish","Qurilmalar o‘rtasida ma’lumot almashish","Faqat matn yozish","Faqat musiqa tinglash"],1],
+["Quyidagilardan qaysi biri kiritish qurilmasi?",["Monitor","Printer","Klaviatura","Proyektor"],2],
+["Kompyuterda zararli dasturlardan himoyalanish uchun nima ishlatiladi?",["Antivirus","Kalkulyator","Paint","Arxivator"],0]
+];
+let idx=0,answers={},warnings=0,blocks=0,locked=false,lookingAwaySince=null,lastBlock=0,faceMesh=null,camera=null;
+const $=id=>document.getElementById(id);
+function render(){let q=qs[idx];$('qnum').textContent=`Savol ${idx+1} / ${qs.length}`;$('progress').style.width=((idx+1)*10)+'%';$('question').textContent=q[0];$('options').innerHTML='';
+q[1].forEach((v,i)=>{let lab=document.createElement('label');lab.className='option';let inp=document.createElement('input');inp.type='radio';inp.name='answer';inp.checked=answers[idx]===i;inp.onchange=()=>answers[idx]=i;lab.append(inp,document.createTextNode(v));$('options').append(lab)});
+$('prev').disabled=idx===0;$('next').style.display=idx===qs.length-1?'none':'inline-block';$('finish').style.display=idx===qs.length-1?'inline-block':'none'}
+$('prev').onclick=()=>{if(idx>0){idx--;render()}};$('next').onclick=()=>{if(idx<qs.length-1){idx++;render()}};$('finish').onclick=()=>{if(locked)return;let score=qs.reduce((s,q,i)=>s+(answers[i]===q[2]?1:0),0);$('quizArea').hidden=true;$('result').hidden=false;$('result').innerHTML=`<h2>Natija: ${score} / 10 (${score*10}%)</h2>`+qs.map((q,i)=>`<p>${i+1}. ${q[0]}<br>Sizning javobingiz: <b>${answers[i]===undefined?'Belgilanmagan':q[1][answers[i]]}</b><br>To‘g‘ri javob: <b style="color:#16834a">${q[1][q[2]]}</b></p>`).join('')+`<button onclick="location.reload()">Qaytadan ishlash</button>`};
+render();
+function blockForFiveSeconds(){if(locked)return;locked=true;blocks++;$('blockCount').textContent=blocks;$('overlay').style.display='flex';let n=5;$('count').textContent=n;let t=setInterval(()=>{n--; $('count').textContent=n;if(n<=0){clearInterval(t);$('overlay').style.display='none';locked=false;lookingAwaySince=null}},1000)}
+$('startCam').onclick=async()=>{try{
+if(!navigator.mediaDevices?.getUserMedia)throw new Error('Kamera uchun localhost yoki HTTPS kerak.');
+const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});$('video').srcObject=stream;
+if(!window.FaceMesh)throw new Error('Yuz aniqlash kutubxonasi yuklanmadi. Internetni tekshiring.');
+faceMesh=new FaceMesh({locateFile:(file)=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
+faceMesh.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:.6,minTrackingConfidence:.6});
+faceMesh.onResults(results=>{
+const faces=results.multiFaceLandmarks;
+if(!faces||!faces.length){$('faceStatus').textContent='Yuz topilmadi';$('camStatus').textContent='Yuz topilmadi — kameraga qarang';return}
+const p=faces[0],nose=p[1],left=p[33],right=p[263];
+const eyeMid=(left.x+right.x)/2;const ratio=(nose.x-eyeMid)/(Math.abs(right.x-left.x)||.001);
+// Rough head-turn heuristic, not eye gaze tracking.
+const away=Math.abs(ratio)>.18;
+$('faceStatus').textContent=away?'Bosh burilgan':'Yuz aniqlangan';
+$('camStatus').textContent=away?'Boshqa tomonga qarash aniqlandi':'Yuz aniqlangan — davom eting';
+if(away&&!locked){if(!lookingAwaySince)lookingAwaySince=Date.now();if(Date.now()-lookingAwaySince>1800&&Date.now()-lastBlock>6500){warnings++;$('warnCount').textContent=warnings;lastBlock=Date.now();blockForFiveSeconds()}}else if(!away)lookingAwaySince=null;
+});
+camera=new Camera($('video'),{onFrame:async()=>{if(faceMesh)await faceMesh.send({image:$('video')})},width:640,height:480});await camera.start();
+$('camStatus').textContent='Kamera ishlayapti';$('startCam').disabled=true;
+}catch(e){$('camStatus').textContent='Xatolik: '+e.message;alert('Kamera ishga tushmadi: '+e.message+'\nFaylni localhost yoki HTTPS orqali oching va kamera ruxsatini bering.');}};
+</script>
+</body></html>
