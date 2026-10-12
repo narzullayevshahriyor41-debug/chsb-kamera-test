@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matematika testi — 20 savol</title>
+<style>
+:root{--navy:#10284a;--blue:#1877f2;--bg:#eef3fa;--green:#168a34;--red:#c62850}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#14233d}
+header{background:var(--navy);color:white;padding:15px 22px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+main{display:grid;grid-template-columns:310px minmax(300px,1fr);gap:18px;padding:18px;max-width:1400px;margin:auto}
+.panel,.quiz{background:white;border-radius:16px;padding:18px;box-shadow:0 4px 18px #18365b12}
+video{width:100%;min-height:170px;background:#101827;border-radius:10px;object-fit:cover;transform:scaleX(-1)}
+button{border:0;border-radius:10px;background:var(--blue);color:white;padding:12px 16px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.4;cursor:not-allowed}
+.secondary{background:#e8eef8;color:#19355d}
+.status{padding:11px;border-radius:10px;background:#e8f8ee;color:#116b35;margin-top:10px;font-weight:bold}
+.small{font-size:13px;color:#64748b;line-height:1.5}
+.option{display:block;padding:14px;border:1px solid #d6e0ef;border-radius:10px;margin:10px 0;cursor:pointer}
+.option:hover{background:#f2f7ff}
+.option input{margin-right:8px}
+.topline{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.bar{height:8px;background:#e1e8f2;border-radius:8px;overflow:hidden;margin:12px 0 22px}
+.bar span{display:block;height:100%;background:var(--blue);width:0}
+#overlay{display:none;position:fixed;inset:0;background:#07172de8;z-index:5;color:white;align-items:center;justify-content:center;text-align:center;padding:20px}
+#overlay .box{max-width:620px}
+#count{font-size:58px;font-weight:bold;border:5px solid white;border-radius:50%;width:110px;height:110px;display:grid;place-items:center;margin:20px auto}
+.warning{background:#fff0f2;color:#8c1736;border-radius:10px;padding:12px;margin-top:12px}
+@media(max-width:760px){main{grid-template-columns:1fr;padding:10px}header{padding:13px}}
+</style>
+</head>
+<body>
+<header><strong>Matematika testi</strong><span>Kamera nazorati bilan sinov · 20 savol</span></header>
+<main>
+<section class="panel">
+<h3>📷 Kamera nazorati</h3>
+<video id="video" autoplay muted playsinline></video>
+<button id="camBtn" style="width:100%;margin-top:10px">Kamerani yoqish</button>
+<div id="camStatus" class="status">Kamera hali yoqilmagan</div>
+<p class="small">Kamera faqat ushbu sahifada ishlaydi. Kamera ruxsati so‘raladi. Bu oddiy yuz ko‘rinishi nazorati; ko‘z qayerga qarayotganini yoki aldashni aniq tasdiqlamaydi.</p>
+<hr>
+<h3>🎙 Ovoz nazorati</h3>
+<button id="micBtn" class="secondary" style="width:100%">Mikrofonni yoqish</button>
+<div id="micStatus" class="status">Mikrofon hali yoqilmagan</div>
+<div class="small">Ovoz chegarasi: <strong id="thresholdText">0.08</strong></div>
+<input id="threshold" type="range" min="0.02" max="0.20" step="0.01" value="0.08" style="width:100%">
+<p class="small">Ovoz balandligi va yuz ko‘rinmasligi birga 5 soniyadan ortiq davom etsa, ogohlantirish beriladi. Fon shovqini ham ta’sir qilishi mumkin.</p>
+<div class="warning"><b>Ogohlantirishlar:</b> <span id="warnings">0</span><br><b>Bloklanishlar:</b> <span id="blocks">0</span></div>
+<p class="small">3 marta bloklanish holati takrorlansa, test sahifasi 1 daqiqaga yopiladi. Bu brauzer sahifasini bloklaydi, butun Windows kompyuterini emas.</p>
+</section>
+<section class="quiz">
+<div class="topline"><span id="stage">1-bosqich: Oson</span><span id="progressText">Savol 1 / 20</span></div>
+<div class="bar"><span id="progress"></span></div>
+<h2 id="question">Savol yuklanmoqda…</h2>
+<div id="options"></div>
+<div class="topline" style="margin-top:20px"><button id="prev" class="secondary" disabled>Oldingi</button><button id="next">Keyingi</button></div>
+<div id="result" style="display:none;margin-top:20px"></div>
+</section>
+</main>
+<div id="overlay"><div class="box"><h1 id="overlayTitle">Test vaqtincha bloklandi</h1><p id="overlayText">Iltimos, nazorat qoidalariga rioya qiling.</p><div id="count">10</div><p>Vaqt tugagach, davom etishingiz mumkin.</p></div></div>
+<script>
+const questions = [
+{stage:"Oson",q:"EKUB(8, 12) ni toping.",o:["2","4","6","8"],a:1},
+{stage:"Oson",q:"EKUK(6, 9) ni toping.",o:["12","15","18","54"],a:2},
+{stage:"Oson",q:"85 soni tub sonmi?",o:["Ha","Yo‘q, 5 ga bo‘linadi","Yo‘q, 3 ga bo‘linadi","Javob berib bo‘lmaydi"],a:1},
+{stage:"Oson",q:"√121 ning qiymatini toping.",o:["10","11","12","21"],a:1},
+{stage:"Oson",q:"∛343 ning qiymatini toping.",o:["6","7","8","9"],a:1},
+{stage:"Oson",q:"(-13) + 5 ni hisoblang.",o:["-18","-8","8","18"],a:1},
+{stage:"Oson",q:"(-5) × (-4) ni hisoblang.",o:["-20","-9","9","20"],a:3},
+{stage:"Oson",q:"2³ × 3² ni hisoblang.",o:["36","54","72","108"],a:1},
+{stage:"O‘rta",q:"54 va 180 sonlarining EKUKini toping.",o:["270","360","540","1080"],a:2},
+{stage:"O‘rta",q:"77, 110 va 242 sonlariga bo‘linadigan eng katta natural sonni toping.",o:["7","11","22","77"],a:1},
+{stage:"O‘rta",q:"180 sonini tub ko‘paytuvchilar darajalari ko‘rinishida yozing.",o:["2²×3²×5","2²×3×5²","2×3²×5²","2³×3²×5"],a:0},
+{stage:"O‘rta",q:"√(5⁴ × 7²) ni toping.",o:["5²×7","5⁴×7","5²×7²","5×7"],a:0},
+{stage:"O‘rta",q:"-12 − (-23) ni hisoblang.",o:["-35","-11","11","35"],a:2},
+{stage:"O‘rta",q:"Avtomobil 16 km janubga, 33 km shimolga, so‘ng 12 km janubga yurdi. Boshlang‘ich nuqtadan qancha masofada?",o:["1 km","5 km","11 km","61 km"],a:2},
+{stage:"O‘rta",q:"EKUB(24, 108) ni toping.",o:["6","12","18","24"],a:1},
+{stage:"Qiyin",q:"2³ × 3³ × 5² × 7 va 2⁴ × 3 × 7³ sonlarining EKUBini toping.",o:["2³×3×7","2³×3×5²×7","2⁴×3×7","2³×3²×7"],a:0},
+{stage:"Qiyin",q:"Ikkita sonning ko‘paytmasi 8820, EKUBi 42. Shu sonlardan biri 210 bo‘lsa, ikkinchisini toping.",o:["21","42","84","126"],a:2},
+{stage:"Qiyin",q:"2160 × n to‘la kub bo‘lishi uchun n ning eng kichik musbat qiymatini toping.",o:["10","30","60","90"],a:1},
+{stage:"Qiyin",q:"Hisoblang: (-6)² ÷ (-12) + [(-8) − (-3)]² × (-2).",o:["-52","-48","-42","-38"],a:0},
+{stage:"Qiyin",q:"2 va 3 ning dastlabki 3 ta umumiy karralisini yozing.",o:["6, 12, 18","6, 18, 24","3, 6, 9","12, 18, 24"],a:0}
+];
+let idx=0, answers=Array(questions.length).fill(null), warnings=0, blocks=0, activeStream=null, audioCtx=null, analyser=null, micStream=null, monitorTimer=null, violationStart=null, overlayActive=false;
+const $=id=>document.getElementById(id);
+function render(){
+ const q=questions[idx]; $("stage").textContent=(idx<8?"1-bosqich: Oson":idx<15?"2-bosqich: O‘rta":"3-bosqich: Qiyin");
+ $("progressText").textContent=`Savol ${idx+1} / ${questions.length}`;$("progress").style.width=`${(idx+1)/questions.length*100}%`;
+ $("question").textContent=q.q;$("options").innerHTML="";
+ q.o.forEach((opt,i)=>{const label=document.createElement("label");label.className="option";const radio=document.createElement("input");radio.type="radio";radio.name="answer";radio.checked=answers[idx]===i;radio.addEventListener("change",()=>answers[idx]=i);label.append(radio,document.createTextNode(opt));$("options").append(label)});
+ $("prev").disabled=idx===0;$("next").textContent=idx===questions.length-1?"Natijani ko‘rish":"Keyingi";
+}
+$("prev").onclick=()=>{if(idx>0){idx--;render()}};
+$("next").onclick=()=>{if(answers[idx]===null){alert("Davom etishdan oldin javobni tanlang.");return}if(idx<questions.length-1){idx++;render()}else showResult()};
+function showResult(){let score=questions.reduce((n,q,i)=>n+(answers[i]===q.a?1:0),0);$("result").style.display="block";$("result").innerHTML=`<h2>Natija: ${score} / ${questions.length}</h2><p>To‘g‘ri javoblar soni: ${score}. Test tugadi.</p>`;$("next").disabled=true;$("prev").disabled=true;$("question").textContent="Test yakunlandi";$("options").innerHTML=""}
+async function startCamera(){
+ try{
+  if(!navigator.mediaDevices?.getUserMedia)throw new Error("Brauzer kamerani qo‘llamaydi. HTTPS manzilini tekshiring.");
+  activeStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});
+  $("video").srcObject=activeStream;await $("video").play();
+  $("camStatus").textContent="Kamera ishlayapti";$("camStatus").style.background="#e8f8ee";
+ }catch(e){$("camStatus").textContent="Kamera ochilmadi: "+e.message;$("camStatus").style.background="#fff0f2";alert("Kamera ochilmadi. Chrome sayt ruxsatini va Windows kamera ruxsatini tekshiring.\n"+e.message)}
+}
+$("camBtn").onclick=startCamera;
+async function startMic(){
+ try{
+  micStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});audioCtx=new (window.AudioContext||window.webkitAudioContext)();await audioCtx.resume();analyser=audioCtx.createAnalyser();analyser.fftSize=1024;audioCtx.createMediaStreamSource(micStream).connect(analyser);
+  $("micStatus").textContent="Mikrofon ishlayapti";$("micStatus").style.background="#e8f8ee";
+ }catch(e){$("micStatus").textContent="Mikrofon ochilmadi: "+e.message;$("micStatus").style.background="#fff0f2"}
+}
+$("micBtn").onclick=startMic;
+$("threshold").oninput=()=>{$("thresholdText").textContent=Number($("threshold").value).toFixed(2)};
+function getRms(){if(!analyser)return 0;const data=new Uint8Array(analyser.fftSize);analyser.getByteTimeDomainData(data);let sum=0;for(const v of data){const x=(v-128)/128;sum+=x*x}return Math.sqrt(sum/data.length)}
+function lockFor(seconds,title,text){if(overlayActive)return;overlayActive=true;$("overlayTitle").textContent=title;$("overlayText").textContent=text;$("overlay").style.display="flex";let left=seconds;$("count").textContent=left;const t=setInterval(()=>{left--;$("count").textContent=left;if(left<=0){clearInterval(t);$("overlay").style.display="none";overlayActive=false}},1000)}
+function monitor(){
+ if(!activeStream)return;
+ const rms=getRms(), threshold=Number($("threshold").value);
+ const video=$("video");let visible=false;
+ try{visible=video.readyState>=2&&video.videoWidth>0&&video.videoHeight>0}catch(e){}
+ // This version detects video availability, not face direction/identity.
+ const violation=rms>threshold&&!visible;
+ if(violation){if(violationStart===null)violationStart=Date.now();if(Date.now()-violationStart>=5000&&!overlayActive){warnings++;$("warnings").textContent=warnings;blocks++;$("blocks").textContent=blocks;violationStart=null;lockFor(blocks>=3?60:10,blocks>=3?"Test 1 daqiqaga bloklandi":"Test 10 soniyaga bloklandi", "Ovoz balandligi yuqori va video aniqlanmadi. Qoidaga rioya qilib davom eting.")}}
+ else violationStart=null;
+}
+monitorTimer=setInterval(monitor,250);
+window.addEventListener("beforeunload",()=>{if(activeStream)activeStream.getTracks().forEach(t=>t.stop());if(micStream)micStream.getTracks().forEach(t=>t.stop())});
+render();
+</script>
+</body>
+</html>
